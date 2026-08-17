@@ -1,0 +1,197 @@
+# 3GPP Standards RAG Chatbot
+
+A Retrieval-Augmented Generation (RAG) chatbot designed to answer technical questions using 3GPP Telecom standards as the primary knowledge source.
+
+The main objective of this project is not simply to generate answers, but to minimize hallucinations by grounding responses in retrieved 3GPP evidence and refusing to answer when sufficient evidence is unavailable.
+
+## Live Demo
+
+🔗 **Live Demo:** [ADD CLOUD RUN URL]
+
+## Repository
+
+🔗 **GitHub:** [ADD GITHUB URL]
+
+---
+
+# Overview
+
+Technical standards contain large amounts of structured and highly specific information distributed across multiple specifications and clauses.
+
+A general-purpose LLM may:
+
+- generate technically plausible but incorrect information
+- mix information from different specifications
+- confuse similar telecom concepts
+- accept false premises in questions
+- provide information that is not present in the source documents
+
+This project addresses these problems using a retrieval-grounded architecture.
+
+The chatbot retrieves relevant passages from 3GPP specifications before generating an answer. If the retrieved evidence is insufficient, or if any generated claim can't be verified against that evidence, the system abstains instead of guessing.
+
+---
+
+# Architecture
+
+```text
+                 3GPP Standards
+                       │
+                       ▼
+              ┌──────────────────┐
+              │ Document Ingest  │
+              │                  │
+              │ PDF extraction   │
+              │ Cleaning         │
+              │ Chunking         │
+              │ Metadata         │
+              └────────┬─────────┘
+                       │
+                       ▼
+              ┌──────────────────┐
+              │ Indexing         │
+              │                  │
+              │ Embeddings       │
+              │ Vector Index     │
+              │ BM25 Index       │
+              └────────┬─────────┘
+                       │
+                       ▼
+                  User Query
+                       │
+                       ▼
+              ┌──────────────────┐
+              │ Intent Router    │
+              │                  │
+              │ CHAT vs RAG      │
+              └────────┬─────────┘
+                       │
+              ┌────────┴─────────┐
+              │                  │
+           CHAT mode         RAG mode
+       (small talk, no          │
+        retrieval needed)       ▼
+              │        ┌──────────────────┐
+              │        │ Hybrid Retrieval │
+              │        │                  │
+              │        │ Dense Retrieval  │
+              │        │ BM25             │
+              │        │ RRF Fusion       │
+              │        │ Confidence Gate  │
+              │        └────────┬─────────┘
+              │                 │
+              │          Retrieved Evidence
+              │                 │
+              │                 ▼
+              │        ┌──────────────────┐
+              │        │ LLM Generation   │
+              │        │                  │
+              │        │ Evidence-grounded│
+              │        │ response +       │
+              │        │ citations        │
+              │        └────────┬─────────┘
+              │                 │
+              │                 ▼
+              │        ┌──────────────────┐
+              │        │ Claim Verification│
+              │        │                  │
+              │        │ Verify generated │
+              │        │ claims against    │
+              │        │ retrieved context │
+              │        └────────┬─────────┘
+              │                 │
+              │          ┌──────┴──────┐
+              │          │             │
+              │       Supported    Unsupported
+              │          │             │
+              ▼          ▼             ▼
+         Direct Reply  Final Answer   Abstain
+                        + Citations
+```
+
+---
+
+# Anti-hallucination design
+
+1. **Confidence gate** — if hybrid retrieval doesn't find anything confidently relevant, the bot refuses instead of guessing.
+2. **Grounded-generation prompt** — temperature 0, must cite every sentence as `[SPEC clause X.Y.Z]`, must say "The provided context does not specify this" instead of extrapolating, and must not assume uplink/downlink symmetry or borrow from unrelated releases.
+3. **Post-hoc claim verification** — a second LLM call checks every sentence in the draft answer against the retrieved context. If any claim can't be verified, the whole answer is withheld rather than shown with a warning label — abstaining is the default, not a fallback.
+4. **Intent routing** — small talk and meta questions ("hi", "what can you do") are answered conversationally without going through retrieval at all, so the bot behaves like a normal chatbot instead of refusing greetings.
+
+No RAG system can guarantee zero hallucination — this design fails toward "I don't know" rather than toward a confident wrong answer, which is the correct behavior for a standards-compliance assistant.
+
+---
+
+# Documents indexed
+
+| Spec | Title |
+|---|---|
+| TS 21.905 | Vocabulary for 3GPP Specifications |
+| TS 23.501 | 5G System Architecture |
+| TS 23.502 | 5G System Procedures |
+| TS 24.301 | NAS Protocol for EPS |
+| TS 36.331 | LTE RRC Protocol |
+| TS 38.300 | NR Overall Description |
+| TS 38.214 | NR Physical Layer Procedures for Data |
+
+Download from: `https://www.3gpp.org/ftp/Specs/latest` (pick the Release 19 versions).
+
+---
+
+# Setup
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env    # then fill in GROQ_API_KEY, GEN_MODEL, VERIFY_MODEL
+```
+
+`GEN_MODEL` and `VERIFY_MODEL` are Groq model names, e.g.:
+```
+GEN_MODEL=openai/gpt-oss-120b
+VERIFY_MODEL=qwen/qwen3.6-27b
+```
+
+---
+
+# Adding a new PDF (command line)
+
+1. Convert the spec to PDF/TXT and drop it into `data/raw/`.
+2. Re-run the pipeline — it's incremental, so only the new file gets processed:
+```bash
+python src/pipeline.py
+```
+   or, to force a full rebuild of everything:
+```bash
+python src/pipeline.py --full
+```
+3. Chat immediately from the terminal:
+```bash
+python src/pipeline.py --chat
+```
+
+---
+
+# Running via the deployed link
+
+The deployed app (Streamlit Cloud) only knows about whatever's in `data/raw/` or `data/processed/` **at the time you pushed to GitHub**. To add a new PDF to the live version:
+
+1. Add the file to `data/raw/` locally.
+2. Run `python src/pipeline.py` locally to rebuild the index.
+3. Commit and push both the new raw file and the updated `data/processed/` folder:
+```bash
+git add data/raw data/processed
+git commit -m "Add new spec"
+git push
+```
+4. Streamlit Cloud auto-redeploys on push — refresh the live link after a minute or two.
+
+There's no way to upload a PDF through the live link itself — indexing only happens via the pipeline, run locally or in CI, not inside the deployed app.
+
+---
+
+# Evaluation
+
+```bash
+python eval/hallucination_eval.py
+```
+Reports: answer rate on in-corpus questions, correct-refusal rate on out-of-corpus questions, and count of sentences flagged unsupported by the verifier. See `eval/eval_set.jsonl` to add more test questions.
