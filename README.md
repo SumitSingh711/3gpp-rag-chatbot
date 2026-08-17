@@ -169,9 +169,11 @@ python src/pipeline.py --full
 3. Chat immediately from the terminal:
 ```bash
 python src/pipeline.py --chat 
+
 or 
+
 # for streamlit UI
-streamlit src/app.py 
+streamlit run src/app.py 
 ```
 
 ---
