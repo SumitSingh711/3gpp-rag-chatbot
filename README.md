@@ -6,11 +6,11 @@ The main objective of this project is not simply to generate answers, but to min
 
 ## Live Demo
 
-🔗 **Live Demo:** [[ADD CLOUD RUN URL](https://3gpp-rag-chatbot-web.streamlit.app/)]
+🔗 **Live Demo:** [[Deployed App URL](https://3gpp-rag-chatbot-web.streamlit.app/)]
 
 ## Repository
 
-🔗 **GitHub:** [[ADD GITHUB URL](https://github.com/SumitSingh711/3gpp-rag-chatbot)]
+🔗 **GitHub:** [[Github URL](https://github.com/SumitSingh711/3gpp-rag-chatbot)]
 
 ---
 
