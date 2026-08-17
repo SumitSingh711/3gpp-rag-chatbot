@@ -6,11 +6,11 @@ The main objective of this project is not simply to generate answers, but to min
 
 ## Live Demo
 
-🔗 **Live Demo:** [ADD CLOUD RUN URL]
+🔗 **Live Demo:** [[ADD CLOUD RUN URL](https://3gpp-rag-chatbot-web.streamlit.app/)]
 
 ## Repository
 
-🔗 **GitHub:** [ADD GITHUB URL]
+🔗 **GitHub:** [[ADD GITHUB URL](https://github.com/SumitSingh711/3gpp-rag-chatbot)]
 
 ---
 
@@ -41,8 +41,7 @@ The chatbot retrieves relevant passages from 3GPP specifications before generati
               ┌──────────────────┐
               │ Document Ingest  │
               │                  │
-              │ PDF extraction   │
-              │ Cleaning         │
+              │ PDF extraction   │         
               │ Chunking         │
               │ Metadata         │
               └────────┬─────────┘
@@ -138,24 +137,27 @@ Download from: `https://www.3gpp.org/ftp/Specs/latest` (pick the Release 19 vers
 
 ---
 
-# Setup
+# How to run locally with custom 3gpp pdf
+
+# clone the project
+```bash
+git clone YOUR_GITHUB_REPO_URL
+cd 3gpp-rag-chatbot
+```
+
+# create virtual environment
+```bash
+python -m myenv .venv
+.venv\Scripts\activate
+```
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env    # then fill in GROQ_API_KEY, GEN_MODEL, VERIFY_MODEL
 ```
-
-`GEN_MODEL` and `VERIFY_MODEL` are Groq model names, e.g.:
-```
-GEN_MODEL=openai/gpt-oss-120b
-VERIFY_MODEL=qwen/qwen3.6-27b
-```
-
----
 
 # Adding a new PDF (command line)
 
-1. Convert the spec to PDF/TXT and drop it into `data/raw/`.
+1. Convert the spec to PDF and drop it into `data/raw/`.
 2. Re-run the pipeline — it's incremental, so only the new file gets processed:
 ```bash
 python src/pipeline.py
@@ -168,24 +170,6 @@ python src/pipeline.py --full
 ```bash
 python src/pipeline.py --chat
 ```
-
----
-
-# Running via the deployed link
-
-The deployed app (Streamlit Cloud) only knows about whatever's in `data/raw/` or `data/processed/` **at the time you pushed to GitHub**. To add a new PDF to the live version:
-
-1. Add the file to `data/raw/` locally.
-2. Run `python src/pipeline.py` locally to rebuild the index.
-3. Commit and push both the new raw file and the updated `data/processed/` folder:
-```bash
-git add data/raw data/processed
-git commit -m "Add new spec"
-git push
-```
-4. Streamlit Cloud auto-redeploys on push — refresh the live link after a minute or two.
-
-There's no way to upload a PDF through the live link itself — indexing only happens via the pipeline, run locally or in CI, not inside the deployed app.
 
 ---
 
