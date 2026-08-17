@@ -10,7 +10,7 @@ The main objective of this project is not simply to generate answers, but to min
 
 ## Repository
 
-🔗 **GitHub:** [[Github URL](https://github.com/SumitSingh711/3gpp-rag-chatbot)]
+🔗 **GitHub:** [[GITHUB URL](https://github.com/SumitSingh711/3gpp-rag-chatbot)]
 
 ---
 
@@ -133,7 +133,7 @@ No RAG system can guarantee zero hallucination — this design fails toward "I d
 | TS 38.300 | NR Overall Description |
 | TS 38.214 | NR Physical Layer Procedures for Data |
 
-Download from: `https://www.3gpp.org/ftp/Specs/latest` (pick the Release 19 versions).
+Downloaded from: `https://www.3gpp.org/ftp/Specs/latest` (picked the Release 19 versions).
 
 ---
 
