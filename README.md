@@ -32,17 +32,11 @@ run setup.bat file
 ```bash
 python src/pipeline.py
 ```
-   or, to force a full rebuild of everything:
-```bash
-python src/pipeline.py --full
-```
-3. Chat immediately from the terminal:
-```bash
-python src/pipeline.py --chat 
 
-or 
 
 # for streamlit UI
+
+```bash
 streamlit run src/app.py 
 ```
 
@@ -55,8 +49,9 @@ python eval/hallucination_eval.py
 ```
 Reports: answer rate on in-corpus questions, correct-refusal rate on out-of-corpus questions, and count of sentences flagged unsupported by the verifier. See `eval/eval_set.jsonl` to add more test questions.
 
-# Overview
+---
 
+# Overview
 
 Technical standards contain large amounts of structured and highly specific information distributed across multiple specifications and clauses.
 
@@ -210,9 +205,15 @@ blindly accepting the premise.
 # 🚧 Currently working on improvements like
 
 Better calibration of the retrieval confidence threshold
+
 Stronger out-of-corpus detection
+
 More robust citation enforcement
+
 Better multi-hop question handling
+
 Larger hallucination evaluation dataset
+
 Support for more 3GPP specifications and releases
+
 Better handling of different specification versions
