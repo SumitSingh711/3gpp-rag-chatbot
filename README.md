@@ -57,7 +57,7 @@ Reports: answer rate on in-corpus questions, correct-refusal rate on out-of-corp
 
 # Overview
 
-```text
+
 Technical standards contain large amounts of structured and highly specific information distributed across multiple specifications and clauses.
 
 A general-purpose LLM may:
@@ -71,7 +71,7 @@ A general-purpose LLM may:
 This project addresses these problems using a retrieval-grounded architecture.
 
 The chatbot retrieves relevant passages from 3GPP specifications before generating an answer. If the retrieved evidence is insufficient, or if any generated claim can't be verified against that evidence, the system abstains instead of guessing.
-'''
+
 ---
 
 # Architecture
@@ -179,35 +179,35 @@ Downloaded from: `https://www.3gpp.org/ftp/Specs/latest` (picked the Release 19 
 
 ---
 
-⚠️ Challenges
+# ⚠️ Challenges faced
 
-3GPP terminology
+**3GPP terminology**
 
 Exact technical terms and acronyms are important in standards documents.
 
 Approach: Hybrid Dense + BM25 retrieval.
 
-Clause-level information
+**Clause-level information**
 
 Important information is often tied to a specific specification and clause.
 
 Approach: Clause-aware chunking and metadata-based citations.
 
-Hallucination
+**Hallucination***
 
 An LLM can generate plausible information that is not present in the
 retrieved standards.
 
 Approach: Retrieval grounding, claim verification and abstention.
 
-False premises
+**False premises**
 
 Questions may contain technically incorrect assumptions.
 
 Approach: Verify generated claims against retrieved evidence instead of
 blindly accepting the premise.
 
-🚧 Currently working on improvements like
+# 🚧 Currently working on improvements like
 
 Better calibration of the retrieval confidence threshold
 Stronger out-of-corpus detection
