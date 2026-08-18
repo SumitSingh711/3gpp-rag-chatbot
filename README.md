@@ -4,13 +4,11 @@ A Retrieval-Augmented Generation (RAG) chatbot designed to answer technical ques
 
 The main objective of this project is not simply to generate answers, but to minimize hallucinations by grounding responses in retrieved 3GPP evidence and refusing to answer when sufficient evidence is unavailable.
 
+---
 ## Live Demo
 
 🔗 **Live Demo:** [[Deployed App URL](https://3gpp-rag-chatbot-web.streamlit.app/)]
 
-## Repository
-
-🔗 **GitHub:** [[GITHUB URL](https://github.com/SumitSingh711/3gpp-rag-chatbot)]
 
 ---
 
@@ -18,7 +16,7 @@ The main objective of this project is not simply to generate answers, but to min
 
 # clone the project
 ```bash
-git clone YOUR_GITHUB_REPO_URL
+git clone https://github.com/SumitSingh711/3gpp-rag-chatbot
 cd 3gpp-rag-chatbot
 ```
 
