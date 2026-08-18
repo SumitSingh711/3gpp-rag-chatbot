@@ -23,8 +23,8 @@ from retriever import HybridRetriever, RetrievedChunk
 
 load_dotenv()  
 
-GEN_MODEL = os.environ.get("GEN_MODEL")
-FAST_MODEL = os.environ.get("VERIFY_MODEL")
+GEN_MODEL = os.environ.get("GEN_MODEL", 'openai/gpt-oss-120b')
+FAST_MODEL = os.environ.get("VERIFY_MODEL", 'openai/gpt-oss-20b')
 
 ROUTER_PROMPT = """You are a routing classifier for a 3GPP telecom-standards RAG chatbot.
 Decide whether the user's LATEST message is small talk / meta conversation about the

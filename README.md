@@ -14,8 +14,50 @@ The main objective of this project is not simply to generate answers, but to min
 
 ---
 
+# How to run locally with custom 3gpp pdf
+
+# clone the project
+```bash
+git clone YOUR_GITHUB_REPO_URL
+cd 3gpp-rag-chatbot
+```
+
+# Automatic environment creation and Libraries installation
+run setup.bat file
+
+# Adding a new PDF (command line)
+
+1. Convert the spec to PDF and drop it into `data/raw/`.
+2. Re-run the pipeline — it's incremental, so only the new file gets processed:
+```bash
+python src/pipeline.py
+```
+   or, to force a full rebuild of everything:
+```bash
+python src/pipeline.py --full
+```
+3. Chat immediately from the terminal:
+```bash
+python src/pipeline.py --chat 
+
+or 
+
+# for streamlit UI
+streamlit run src/app.py 
+```
+
+---
+
+# Evaluation
+
+```bash
+python eval/hallucination_eval.py
+```
+Reports: answer rate on in-corpus questions, correct-refusal rate on out-of-corpus questions, and count of sentences flagged unsupported by the verifier. See `eval/eval_set.jsonl` to add more test questions.
+
 # Overview
 
+```text
 Technical standards contain large amounts of structured and highly specific information distributed across multiple specifications and clauses.
 
 A general-purpose LLM may:
@@ -29,7 +71,7 @@ A general-purpose LLM may:
 This project addresses these problems using a retrieval-grounded architecture.
 
 The chatbot retrieves relevant passages from 3GPP specifications before generating an answer. If the retrieved evidence is insufficient, or if any generated claim can't be verified against that evidence, the system abstains instead of guessing.
-
+'''
 ---
 
 # Architecture
@@ -137,50 +179,40 @@ Downloaded from: `https://www.3gpp.org/ftp/Specs/latest` (picked the Release 19 
 
 ---
 
-# How to run locally with custom 3gpp pdf
+⚠️ Challenges
 
-# clone the project
-```bash
-git clone YOUR_GITHUB_REPO_URL
-cd 3gpp-rag-chatbot
-```
+3GPP terminology
 
-# create virtual environment
-```bash
-python -m myenv .venv
-.venv\Scripts\activate
-```
+Exact technical terms and acronyms are important in standards documents.
 
-```bash
-pip install -r requirements.txt
-```
+Approach: Hybrid Dense + BM25 retrieval.
 
-# Adding a new PDF (command line)
+Clause-level information
 
-1. Convert the spec to PDF and drop it into `data/raw/`.
-2. Re-run the pipeline — it's incremental, so only the new file gets processed:
-```bash
-python src/pipeline.py
-```
-   or, to force a full rebuild of everything:
-```bash
-python src/pipeline.py --full
-```
-3. Chat immediately from the terminal:
-```bash
-python src/pipeline.py --chat 
+Important information is often tied to a specific specification and clause.
 
-or 
+Approach: Clause-aware chunking and metadata-based citations.
 
-# for streamlit UI
-streamlit run src/app.py 
-```
+Hallucination
 
----
+An LLM can generate plausible information that is not present in the
+retrieved standards.
 
-# Evaluation
+Approach: Retrieval grounding, claim verification and abstention.
 
-```bash
-python eval/hallucination_eval.py
-```
-Reports: answer rate on in-corpus questions, correct-refusal rate on out-of-corpus questions, and count of sentences flagged unsupported by the verifier. See `eval/eval_set.jsonl` to add more test questions.
+False premises
+
+Questions may contain technically incorrect assumptions.
+
+Approach: Verify generated claims against retrieved evidence instead of
+blindly accepting the premise.
+
+🚧 Currently working on improvements like
+
+Better calibration of the retrieval confidence threshold
+Stronger out-of-corpus detection
+More robust citation enforcement
+Better multi-hop question handling
+Larger hallucination evaluation dataset
+Support for more 3GPP specifications and releases
+Better handling of different specification versions
