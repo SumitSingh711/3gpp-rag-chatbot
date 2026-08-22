@@ -1,164 +1,177 @@
 # 3GPP Standards RAG Chatbot
 
-A Retrieval-Augmented Generation (RAG) chatbot designed to answer technical questions using 3GPP Telecom standards as the primary knowledge source.
+A retrieval-grounded chatbot for answering questions from **3GPP specifications** with clause-level citations, high factual accuracy, and controlled abstention.
 
-The main objective of this project is not simply to generate answers, but to minimize hallucinations by grounding responses in retrieved 3GPP evidence and refusing to answer when sufficient evidence is unavailable.
+The system is designed to reduce common LLM failure modes such as hallucination, specification/release confusion, incorrect technical assumptions, and unsupported answers. When sufficient evidence cannot be retrieved or a generated claim cannot be verified, the system **abstains instead of guessing**.
 
----
 ## Live Demo
 
-🔗 **Live Demo:** [[Deployed App URL](https://3gpp-rag-chatbot-web.streamlit.app/)]
-
-
----
-
-# How to run locally with custom 3gpp pdf
-
-# clone the project
-```bash
-git clone https://github.com/SumitSingh711/3gpp-rag-chatbot
-cd 3gpp-rag-chatbot
-```
-
-# Automatic environment creation and Libraries installation
-run setup.bat file
-
-# Adding a new PDF (command line)
-
-1. Convert the spec to PDF and drop it into `data/raw/`.
-2. Re-run the pipeline — it's incremental, so only the new file gets processed:
-```bash
-python src/pipeline.py
-```
-
-
-# for streamlit UI
-
-```bash
-streamlit run src/app.py 
-```
+🔗 **[3GPP Standards RAG Chatbot](https://3gpp-rag-chatbot-web.streamlit.app/)**
 
 ---
 
-# Evaluation
+## Features
 
-```bash
-python eval/hallucination_eval.py
-```
-Reports: answer rate on in-corpus questions, correct-refusal rate on out-of-corpus questions, and count of sentences flagged unsupported by the verifier. See `eval/eval_set.jsonl` to add more test questions.
-
----
-
-# Overview
-
-Technical standards contain large amounts of structured and highly specific information distributed across multiple specifications and clauses.
-
-A general-purpose LLM may:
-
-- generate technically plausible but incorrect information
-- mix information from different specifications
-- confuse similar telecom concepts
-- accept false premises in questions
-- provide information that is not present in the source documents
-
-This project addresses these problems using a retrieval-grounded architecture.
-
-The chatbot retrieves relevant passages from 3GPP specifications before generating an answer. If the retrieved evidence is insufficient, or if any generated claim can't be verified against that evidence, the system abstains instead of guessing.
+- **Hybrid Retrieval** using Dense Embeddings + BM25
+- **RRF Fusion** for combining semantic and lexical retrieval results
+- **Intent Routing** between conversational and standards-related queries
+- **Clause-aware retrieval** for precise specification references
+- **Confidence Gate** to reject queries with insufficient evidence
+- **Grounded LLM Generation** using retrieved specification context
+- **Claim Verification** against retrieved evidence
+- **Clause-level Citations** for technical answers
+- **Controlled Abstention** for unsupported or out-of-corpus questions
+- **Release-aware retrieval** to reduce cross-release confusion
+- **False-premise detection** to avoid accepting incorrect assumptions
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
-                 3GPP Standards
-                       │
-                       ▼
-              ┌──────────────────┐
-              │ Document Ingest  │
-              │                  │
-              │ PDF extraction   │         
-              │ Chunking         │
-              │ Metadata         │
-              └────────┬─────────┘
-                       │
-                       ▼
-              ┌──────────────────┐
-              │ Indexing         │
-              │                  │
-              │ Embeddings       │
-              │ Vector Index     │
-              │ BM25 Index       │
-              └────────┬─────────┘
-                       │
-                       ▼
-                  User Query
-                       │
-                       ▼
-              ┌──────────────────┐
-              │ Intent Router    │
-              │                  │
-              │ CHAT vs RAG      │
-              └────────┬─────────┘
-                       │
-              ┌────────┴─────────┐
-              │                  │
-           CHAT mode         RAG mode
-       (small talk, no          │
-        retrieval needed)       ▼
-              │        ┌──────────────────┐
-              │        │ Hybrid Retrieval │
-              │        │                  │
-              │        │ Dense Retrieval  │
-              │        │ BM25             │
-              │        │ RRF Fusion       │
-              │        │ Confidence Gate  │
-              │        └────────┬─────────┘
-              │                 │
-              │          Retrieved Evidence
-              │                 │
-              │                 ▼
-              │        ┌──────────────────┐
-              │        │ LLM Generation   │
-              │        │                  │
-              │        │ Evidence-grounded│
-              │        │ response +       │
-              │        │ citations        │
-              │        └────────┬─────────┘
-              │                 │
-              │                 ▼
-              │        ┌──────────────────┐
-              │        │ Claim Verification│
-              │        │                  │
-              │        │ Verify generated │
-              │        │ claims against    │
-              │        │ retrieved context │
-              │        └────────┬─────────┘
-              │                 │
-              │          ┌──────┴──────┐
-              │          │             │
-              │       Supported    Unsupported
-              │          │             │
-              ▼          ▼             ▼
-         Direct Reply  Final Answer   Abstain
-                        + Citations
+                 3GPP Specifications
+                         |
+                         v
+              +---------------------+
+              |  Document Ingestion |
+              +---------------------+
+                         |
+                 PDF Extraction
+                         |
+                 Clause Chunking
+                         |
+                     Metadata
+                         |
+                         v
+              +---------------------+
+              |      Indexing       |
+              |                     |
+              | Dense Embeddings    |
+              | BM25                |
+              | Vector Index        |
+              +---------------------+
+                         |
+                         v
+                    User Query
+                         |
+                         v
+              +---------------------+
+              |    Intent Router    |
+              +---------------------+
+                    /         \
+                 CHAT         RAG
+                  |            |
+             Direct Reply   Hybrid Retrieval
+                              |
+                         Dense + BM25
+                              |
+                             RRF
+                              |
+                              v
+                    Confidence Gate
+                         /      \
+                      Fail       Pass
+                       |           |
+                    Abstain        v
+                              LLM Generation
+                                   |
+                                   v
+                           Claim Verification
+                              /        \
+                           Fail        Pass
+                            |            |
+                         Abstain    Answer + Citation
+```
+
+The complete pipeline consists of intent routing, hybrid retrieval, RRF fusion, confidence gating, grounded generation, claim verification, and abstention.
+
+---
+
+## RAG Pipeline
+
+### 1. Intent Routing
+
+Determines whether the user's query is:
+
+- Conversational
+- Related to 3GPP standards and requires retrieval
+
+### 2. Hybrid Retrieval
+
+Combines:
+
+- **Dense semantic retrieval** for conceptual similarity
+- **BM25 lexical retrieval** for exact terminology, identifiers, and specification language
+
+### 3. RRF Fusion
+
+Reciprocal Rank Fusion combines the ranked results from both retrieval methods.
+
+### 4. Confidence Gate
+
+Checks whether the retrieved evidence is strong enough to answer the query.
+
+If the evidence is insufficient, the system abstains.
+
+### 5. Grounded Generation
+
+The LLM generates an answer using the retrieved specification context rather than relying on unsupported model knowledge.
+
+### 6. Claim Verification
+
+Generated claims are checked against the retrieved evidence.
+
+### 7. Abstention
+
+If claims cannot be sufficiently verified, the system refuses to provide an unsupported answer.
+
+---
+
+## Anti-Hallucination Design
+
+The chatbot follows strict grounding rules:
+
+- Temperature is set to **0** for deterministic generation.
+- Technical claims must have a specification/clause citation.
+- Unsupported extrapolation is not allowed.
+- The system does not assume uplink/downlink symmetry.
+- Behavior from unrelated releases is not borrowed.
+- False premises are checked against retrieved evidence.
+- Claims that cannot be verified cause the system to abstain.
+
+### Decision Flow
+
+```text
+Question
+   |
+   v
+Evidence Found?
+   |
+   +---- No ----> Abstain
+   |
+  Yes
+   |
+   v
+Generate Answer
+   |
+   v
+Claims Verified?
+   |
+   +---- No ----> Abstain
+   |
+  Yes
+   |
+   v
+Answer + Citation
 ```
 
 ---
 
-# Anti-hallucination design
+## Indexed Specifications
 
-1. **Confidence gate** — if hybrid retrieval doesn't find anything confidently relevant, the bot refuses instead of guessing.
-2. **Grounded-generation prompt** — temperature 0, must cite every sentence as `[SPEC clause X.Y.Z]`, must say "The provided context does not specify this" instead of extrapolating, and must not assume uplink/downlink symmetry or borrow from unrelated releases.
-3. **Post-hoc claim verification** — a second LLM call checks every sentence in the draft answer against the retrieved context. If any claim can't be verified, the whole answer is withheld rather than shown with a warning label — abstaining is the default, not a fallback.
-4. **Intent routing** — small talk and meta questions ("hi", "what can you do") are answered conversationally without going through retrieval at all, so the bot behaves like a normal chatbot instead of refusing greetings.
+The current knowledge base contains the following specifications:
 
-No RAG system can guarantee zero hallucination — this design fails toward "I don't know" rather than toward a confident wrong answer, which is the correct behavior for a standards-compliance assistant.
-
----
-
-# Documents indexed
-
-| Spec | Title |
+| Specification | Title |
 |---|---|
 | TS 21.905 | Vocabulary for 3GPP Specifications |
 | TS 23.501 | 5G System Architecture |
@@ -168,50 +181,166 @@ No RAG system can guarantee zero hallucination — this design fails toward "I d
 | TS 38.300 | NR Overall Description |
 | TS 38.214 | NR Physical Layer Procedures for Data |
 
-Downloaded from: `https://www.3gpp.org/ftp/Specs/latest` (picked the Release 19 versions).
+The project currently uses **Release 19** versions of these specifications.
 
 ---
 
-# ⚠️ Challenges faced
+## Evaluation
 
-**3GPP terminology**
+The evaluation dataset contains several categories of questions:
 
-Exact technical terms and acronyms are important in standards documents.
+1. Direct-answer
+2. Conditional-rule
+3. Example-based
+4. Exact-value
+5. Reasoning
+6. Hallucination / unanswerable
+7. Entity-mismatch / trap
+8. Out-of-context
 
-Approach: Hybrid Dense + BM25 retrieval.
+Evaluation focuses on:
 
-**Clause-level information**
+- Answer accuracy
+- Retrieval quality
+- Citation correctness
+- Groundedness
+- Abstention behavior
+- False-answer rate
+- False-premise rejection
 
-Important information is often tied to a specific specification and clause.
+### Run Evaluation
 
-Approach: Clause-aware chunking and metadata-based citations.
+```bash
+python eval/hallucination_eval.py
+```
 
-**Hallucination***
+The evaluation reports the answer rate on in-corpus questions, correct-refusal rate on out-of-corpus questions, and unsupported claims identified by the verifier.
 
-An LLM can generate plausible information that is not present in the
-retrieved standards.
+Additional evaluation questions can be added to:
 
-Approach: Retrieval grounding, claim verification and abstention.
+```text
+eval/eval_set.jsonl
+```
 
-**False premises**
 
-Questions may contain technically incorrect assumptions.
 
-Approach: Verify generated claims against retrieved evidence instead of
-blindly accepting the premise.
+---
 
-# 🚧 Currently working on improvements like
+## Run Locally
 
-Better calibration of the retrieval confidence threshold
+### 1. Clone the Repository
 
-Stronger out-of-corpus detection
+```bash
+git clone https://github.com/SumitSingh711/3gpp-rag-chatbot
 
-More robust citation enforcement
+cd 3gpp-rag-chatbot
+```
 
-Better multi-hop question handling
+### 2. Setup Environment
 
-Larger hallucination evaluation dataset
+Run:
 
-Support for more 3GPP specifications and releases
+```text
+setup.bat
+```
 
-Better handling of different specification versions
+The setup script automatically creates the required environment and installs the project dependencies.
+
+### 3. Add Custom 3GPP PDFs
+
+Place custom 3GPP PDF specifications inside:
+
+```text
+data/raw/
+```
+
+The preprocessing pipeline is designed specifically for 3GPP-format PDFs and extracts the required metadata.
+
+Then run:
+
+```bash
+python src/pipeline.py
+```
+
+The pipeline is **incremental**, so only newly added PDF files are processed.
+
+### 4. Start the Streamlit Application
+
+```bash
+streamlit run src/app.py
+```
+
+The application will start locally and provide a URL for accessing the chatbot.
+
+---
+
+## Key Challenges & Solutions
+
+| Challenge | Solution |
+|---|---|
+| 3GPP terminology | Dense + BM25 retrieval |
+| Exact clause information | Clause-aware chunking |
+| Hallucination | Grounding + claim verification |
+| False premises | Evidence-based validation |
+| Release confusion | Specification/release metadata |
+| Out-of-corpus questions | Confidence gate |
+| Multi-hop questions | Improved retrieval planned |
+
+
+
+---
+
+## Current Improvements
+
+Planned and ongoing improvements include:
+
+- Better retrieval confidence calibration
+- Stronger out-of-corpus detection
+- More robust citation enforcement
+- Better multi-hop retrieval
+- Larger hallucination evaluation dataset
+- Support for additional specifications and releases
+- Improved version-aware retrieval
+
+---
+
+## Core Design Principle
+
+```text
+Retrieve Evidence
+       ↓
+Generate From Evidence
+       ↓
+Verify Claims
+       ↓
+Answer Only If Supported
+       ↓
+Otherwise Abstain
+```
+
+The chatbot prioritizes **groundedness over answer completion**: it should provide an answer only when the available specification evidence supports it.
+
+---
+
+## Project Structure
+
+```text
+3gpp-rag-chatbot/
+│
+├── data/
+│   └── raw/
+│       └── 3GPP PDF specifications
+│
+├── src/
+│   ├── pipeline.py
+│   └── app.py
+│
+├── eval/
+│   ├── hallucination_eval.py
+│   └── eval_set.jsonl
+│
+├── setup.bat
+└── README.md
+```
+
+---
